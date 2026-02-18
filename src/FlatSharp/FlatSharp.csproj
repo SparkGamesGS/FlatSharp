@@ -34,6 +34,7 @@
     </PackageReference>
     <PackageReference Include="System.Memory" />
     <PackageReference Include="NetStandard.Library" VersionOverride="2.0.3" GeneratePathProperty="true" PrivateAssets="All" />
+    <PackageReference Include="UniTask" />
   </ItemGroup>
 
   <ItemGroup>

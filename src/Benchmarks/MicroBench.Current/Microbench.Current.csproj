@@ -22,6 +22,7 @@
     <PackageReference Include="Grpc" />
     <PackageReference Include="System.IO.FileSystem.Primitives" />
     <PackageReference Include="System.Runtime.InteropServices" />
+    <PackageReference Include="UniTask" />
   </ItemGroup>
 
   <ItemGroup>

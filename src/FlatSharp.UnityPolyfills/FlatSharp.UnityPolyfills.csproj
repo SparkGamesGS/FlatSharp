@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Memory" />
+    <PackageReference Include="UniTask" />
   </ItemGroup>
 
   <ItemGroup>

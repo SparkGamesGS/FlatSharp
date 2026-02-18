@@ -219,7 +219,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
             {
                 foreach (var method in this.calls)
                 {
-                    writer.AppendLine($".AddMethod({methodNameMap[method.Name]}, serviceImpl == null ? ({this.GetServerHandlerDelegateType(method)}?)null : serviceImpl.{method.Name})");
+                    writer.AppendLine($".AddMethod({methodNameMap[method.Name]}, serviceImpl == null ? ({this.GetServerHandlerDelegateType(method)}?)null : (request, ctx) => serviceImpl.{method.Name}(request, ctx).AsTask())");
                 }
 
                 writer.AppendLine(".Build();");
@@ -244,7 +244,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
 
     private string GetServerMethodSignature(RpcCallSchemaModel call)
     {
-        const string TaskString = "System.Threading.Tasks.Task";
+        const string TaskString = "Cysharp.Threading.Tasks.UniTask";
         switch (call.StreamingType)
         {
             case RpcStreamingType.Unary:
@@ -299,22 +299,22 @@ public class RpcServiceSchemaModel : BaseSchemaModel
                 {
                     case RpcStreamingType.Unary:
                         writer.AppendSummaryComment(call.Documentation);
-                        writer.AppendLine($"Task<{call.ResponseType}> {call.Name}({call.RequestType} request, CancellationToken token);");
+                        writer.AppendLine($"UniTask<{call.ResponseType}> {call.Name}({call.RequestType} request, CancellationToken token);");
                         break;
 
                     case RpcStreamingType.Client:
                         writer.AppendSummaryComment(call.Documentation);
-                        writer.AppendLine($"Task<{call.ResponseType}> {call.Name}({Channels}.ChannelReader<{call.RequestType}> requestChannel, CancellationToken token);");
+                        writer.AppendLine($"UniTask<{call.ResponseType}> {call.Name}({Channels}.ChannelReader<{call.RequestType}> requestChannel, CancellationToken token);");
                         break;
 
                     case RpcStreamingType.Server:
                         writer.AppendSummaryComment(call.Documentation);
-                        writer.AppendLine($"Task {call.Name}({call.RequestType} request, {Channels}.ChannelWriter<{call.ResponseType}> responseChannel, CancellationToken token);");
+                        writer.AppendLine($"UniTask {call.Name}({call.RequestType} request, {Channels}.ChannelWriter<{call.ResponseType}> responseChannel, CancellationToken token);");
                         break;
 
                     case RpcStreamingType.Bidirectional:
                         writer.AppendSummaryComment(call.Documentation);
-                        writer.AppendLine($"Task {call.Name}({Channels}.ChannelReader<{call.RequestType}> requestChannel, {Channels}.ChannelWriter<{call.ResponseType}> responseChannel, CancellationToken token);");
+                        writer.AppendLine($"UniTask {call.Name}({Channels}.ChannelReader<{call.RequestType}> requestChannel, {Channels}.ChannelWriter<{call.ResponseType}> responseChannel, CancellationToken token);");
                         break;
                 }
             }
@@ -414,7 +414,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
 
         void GenerateUnaryInterfaceImpl(RpcCallSchemaModel call)
         {
-            writer.AppendLine($"async Task<{call.ResponseType}> {this.interfaceName}.{call.Name}({call.RequestType} request, CancellationToken token)");
+            writer.AppendLine($"async UniTask<{call.ResponseType}> {this.interfaceName}.{call.Name}({call.RequestType} request, CancellationToken token)");
             using (writer.WithBlock())
             {
                 writer.AppendLine($"return await this.{call.Name}(request, cancellationToken: token).ResponseAsync;");
@@ -423,7 +423,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
 
         void GenerateClientStreamingInterfaceImpl(RpcCallSchemaModel call)
         {
-            writer.AppendLine($"async Task<{call.ResponseType}> {this.interfaceName}.{call.Name}({Channels}.ChannelReader<{call.RequestType}> requestChannel, CancellationToken token)");
+            writer.AppendLine($"async UniTask<{call.ResponseType}> {this.interfaceName}.{call.Name}({Channels}.ChannelReader<{call.RequestType}> requestChannel, CancellationToken token)");
             using (writer.WithBlock())
             {
                 writer.AppendLine($"var call = this.{call.Name}(cancellationToken: token);");
@@ -434,7 +434,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
 
         void GenerateServerStreamingImpl(RpcCallSchemaModel call)
         {
-            writer.AppendLine($"async Task {this.interfaceName}.{call.Name}({call.RequestType} request, {Channels}.ChannelWriter<{call.ResponseType}> responseChannel, CancellationToken token)");
+            writer.AppendLine($"async UniTask {this.interfaceName}.{call.Name}({call.RequestType} request, {Channels}.ChannelWriter<{call.ResponseType}> responseChannel, CancellationToken token)");
             using (writer.WithBlock())
             {
                 writer.AppendLine($"var call = this.{call.Name}(request, cancellationToken: token);");
@@ -444,17 +444,17 @@ public class RpcServiceSchemaModel : BaseSchemaModel
 
         void GenerateBidirectionalStreamingImpl(RpcCallSchemaModel call)
         {
-            writer.AppendLine($"async Task {this.interfaceName}.{call.Name}({Channels}.ChannelReader<{call.RequestType}> requestChannel, {Channels}.ChannelWriter<{call.ResponseType}> responseChannel, CancellationToken token)");
+            writer.AppendLine($"async UniTask {this.interfaceName}.{call.Name}({Channels}.ChannelReader<{call.RequestType}> requestChannel, {Channels}.ChannelWriter<{call.ResponseType}> responseChannel, CancellationToken token)");
             using (writer.WithBlock())
             {
                 writer.AppendLine($"using (var cts = CancellationTokenSource.CreateLinkedTokenSource(token))");
                 using (writer.WithBlock())
                 {
-                    writer.AppendLine("var tasks = new List<Task>();");
+                    writer.AppendLine("var tasks = new List<UniTask>();");
                     writer.AppendLine($"var call = this.{call.Name}(cancellationToken: cts.Token);");
 
                     // pulls from request channel and writes into the call.
-                    writer.AppendLine("tasks.Add(Task.Run(async () => ");
+                    writer.AppendLine("tasks.Add(UniTask.RunOnThreadPool(async () => ");
                     using (writer.WithBlock())
                     {
                         ReadFromRequestChannelIntoRequestStream("cts.Token");
@@ -462,7 +462,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
                     writer.AppendLine("));");
 
                     // reads from the response stream and pushes to the channel.
-                    writer.AppendLine("tasks.Add(Task.Run(async () => ");
+                    writer.AppendLine("tasks.Add(UniTask.RunOnThreadPool(async () => ");
                     using (writer.WithBlock())
                     {
                         ReadFromResponseStreamIntoResponseChannel("cts.Token");
@@ -472,13 +472,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
                     writer.AppendLine("try");
                     using (writer.WithBlock())
                     {
-                        writer.AppendLine("while (tasks.Count > 0)");
-                        using (writer.WithBlock())
-                        {
-                            writer.AppendLine("Task completedTask = await Task.WhenAny(tasks);");
-                            writer.AppendLine("tasks.Remove(completedTask);");
-                            writer.AppendLine("await completedTask;");
-                        }
+                        writer.AppendLine("await UniTask.WhenAll(tasks);");
                     }
                     writer.AppendLine("finally");
                     using (writer.WithBlock())
@@ -571,7 +565,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
 
     private string GetServerHandlerDelegate(RpcCallSchemaModel call)
     {
-        return $"new {this.GetServerHandlerDelegateType(call)}(serviceImpl.{call.Name})";
+        return $"new {this.GetServerHandlerDelegateType(call)}((response, ctx) => serviceImpl.{call.Name}(response, ctx).AsTask())";
     }
 
     private string GetServerHandlerDelegateType(RpcCallSchemaModel call)

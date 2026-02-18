@@ -93,7 +93,7 @@ public class RootModel
         writer.AppendLine("using System.Linq;");
         writer.AppendLine("using System.Runtime.CompilerServices;");
         writer.AppendLine("using System.Threading;");
-        writer.AppendLine("using System.Threading.Tasks;");
+        writer.AppendLine("using Cysharp.Threading.Tasks;");
         writer.AppendLine("using FlatSharp;");
         writer.AppendLine("using FlatSharp.Attributes;");
         writer.AppendLine("using FlatSharp.Internal;");

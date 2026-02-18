@@ -23,6 +23,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 using CommandLine;
+using Cysharp.Threading.Tasks;
 using FlatSharp.CodeGen;
 using FlatSharp.Compiler.SchemaModel;
 using FlatSharp.TypeModel;
@@ -680,6 +681,8 @@ public class FlatSharpCompiler
         {
             references.AddRange(additionalReferences);
         }
+
+        references.Add(Assembly.GetAssembly(typeof(UniTask))!);
 
         if (options.UnityAssemblyPath is not null)
         {

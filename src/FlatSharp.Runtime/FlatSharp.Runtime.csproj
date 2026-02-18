@@ -29,6 +29,8 @@
 
   <ItemGroup>
     <PackageReference Include="System.Memory" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />
+    <PackageReference Include="UniTask" />
   </ItemGroup>
 
   <ItemGroup>

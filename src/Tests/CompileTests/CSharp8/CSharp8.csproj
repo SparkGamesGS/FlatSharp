@@ -16,6 +16,7 @@
     <PackageReference Include="Grpc.Core.Api" />
     <PackageReference Include="Microsoft.CSharp" />
     <PackageReference Include="System.Threading.Channels" />
+    <PackageReference Include="UniTask" />
   </ItemGroup>
 
   <ItemGroup>

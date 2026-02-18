@@ -20,5 +20,9 @@
     <FlatSharpSchema Include="Schema.fbs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="UniTask" />
+  </ItemGroup>
+
 </Project>
 
