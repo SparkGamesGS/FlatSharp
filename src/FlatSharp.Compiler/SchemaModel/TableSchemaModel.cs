@@ -97,7 +97,6 @@ public class TableSchemaModel : BaseReferenceTypeSchemaModel
         writer.AppendLine(attribute);
         this.Attributes.EmitAsMetadata(writer);
         writer.AppendLine("[System.Runtime.CompilerServices.CompilerGenerated]");
-        writer.AppendLine($"[System.Diagnostics.DebuggerTypeProxy(\"{this.FullName}\")]");
         writer.AppendLine($"public partial class {this.Name}");
 
         using (writer.IncreaseIndent())
