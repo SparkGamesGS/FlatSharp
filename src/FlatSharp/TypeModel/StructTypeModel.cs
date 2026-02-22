@@ -31,12 +31,13 @@ public class StructTypeModel : RuntimeTypeModel
     private int maxAlignment = 1;
     private ConstructorInfo? preferredConstructor;
     private MethodInfo? onDeserializeMethod;
-    private readonly Guid guid = Guid.NewGuid();
+    private readonly string guid;
     private readonly FlatBufferStructAttribute? attribute;
 
     internal StructTypeModel(Type clrType, TypeModelContainer container) : base(clrType, container)
     {
         this.attribute = clrType.GetCustomAttribute<FlatBufferStructAttribute>();
+        this.guid = GuidUtility.CreateMD5Guid(clrType.FullName!);
     }
 
     /// <summary>
@@ -287,6 +288,6 @@ public class StructTypeModel : RuntimeTypeModel
 
     private string GetDeserializedClassName(FlatBufferDeserializationOption option)
     {
-        return $"structReader_{this.guid:n}_{option}";
+        return $"structReader_{this.guid}_{option}";
     }
 }

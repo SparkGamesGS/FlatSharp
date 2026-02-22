@@ -384,7 +384,7 @@ public class FlatSharpCompiler
 
         List<(byte[] bfbs, string fbsPath)> results = new();
         string temp = Path.GetTempPath();
-        string dirName = $"flatsharpcompiler_temp_{Guid.NewGuid():n}";
+        string dirName = $"flatsharpcompiler_temp_{GuidUtility.CreateMD5Guid(options.OutputDirectory)}";/*_{Guid.NewGuid():n}";*/
         string outputDir = Path.Combine(temp, dirName);
         Directory.CreateDirectory(outputDir);
 

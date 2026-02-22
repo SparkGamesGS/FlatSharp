@@ -29,8 +29,8 @@ public class TableTypeModel : RuntimeTypeModel
     internal const string OnDeserializedMethodName = "OnFlatSharpDeserialized";
     private const int FileIdentifierSize = 4;
 
-    private readonly string GuidBase = Guid.NewGuid().ToString("n");
-    private readonly string MetadataClassName = "tableMetadata_" + Guid.NewGuid().ToString("n");
+    private readonly string GuidBase;
+    private readonly string MetadataClassName;
 
     /// <summary>
     /// Maps vtable index -> type model.
@@ -47,6 +47,8 @@ public class TableTypeModel : RuntimeTypeModel
 
     internal TableTypeModel(Type clrType, TypeModelContainer typeModelProvider) : base(clrType, typeModelProvider)
     {
+        GuidBase = GuidUtility.CreateMD5Guid(clrType.FullName!);
+        MetadataClassName = "tableMetadata_" + GuidBase;
     }
 
     /// <summary>

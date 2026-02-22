@@ -31,7 +31,7 @@ internal static class CloneMethodsGenerator
         TypeModelContainer container)
     {
         string @namespace = $"FlatSharp.Compiler.Generated";
-        string className = $"CloneHelpers_{Guid.NewGuid():n}";
+        string className = $"CloneHelpers_{GuidUtility.CreateMD5Guid(options.OutputDirectory)}";/*_{Guid.NewGuid():n}";*/
         string methodName = "Clone";
 
         string fullyQualifiedMethodName = $"global::{@namespace}.{className}.{methodName}";

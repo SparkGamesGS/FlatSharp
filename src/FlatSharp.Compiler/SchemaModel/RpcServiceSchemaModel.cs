@@ -166,7 +166,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
 
     private string GenerateMarshaller(string type, CodeWriter writer)
     {
-        string name = $"__Marshaller_{Guid.NewGuid():n}";
+        string name = $"__Marshaller_{GuidUtility.CreateMD5Guid(type)}";/*_{Guid.NewGuid():n}";*/
         writer.AppendLine($"private static readonly {GrpcCore}.Marshaller<{type}> {name} = CreateMarshaller<{type}>();");
 
         return name;
@@ -183,7 +183,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
             var requestType = call.RequestType;
             var responseType = call.ResponseType;
 
-            string methodVariableName = $"__Method_{Guid.NewGuid():n}";
+            string methodVariableName = $"__Method_{GuidUtility.CreateMD5Guid($"{methodName}{streamingType}{responseType}{responseType}")}";/*_{Guid.NewGuid():n}";*/
 
             methodDefinitionMap[methodName] = methodVariableName;
 
