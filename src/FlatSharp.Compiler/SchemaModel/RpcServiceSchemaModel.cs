@@ -128,6 +128,14 @@ public class RpcServiceSchemaModel : BaseSchemaModel
                 writer.AppendLine("OnStaticInitialization();");
             }
 
+            writer.AppendLine("public static void WithSettings(Action<SerializerSettings> settingsCallback)");
+            using (writer.WithBlock())
+            {
+                foreach (string type in marshallers.Keys)
+                {
+                    writer.AppendLine($"Serializer<{type}>.Value = Serializer<{type}>.Value.WithSettings(settingsCallback);");
+                }
+            }
 
             this.DefineServerBaseClass(writer, methods);
             this.DefineClientClass(writer, methods);
