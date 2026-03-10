@@ -22,7 +22,7 @@ namespace FlatSharp.Compiler.SchemaModel;
 public class RpcServiceSchemaModel : BaseSchemaModel
 {
     private const string GrpcCore = "Grpc.Core";
-    private const string Channels = "System.Threading.Channels";
+    private const string Channels = "Cysharp.Threading.Tasks";
     private const string CancellationToken = "System.Threading.CancellationToken";
 
     private static readonly string CreateMarshallerFunction = $@"
@@ -407,7 +407,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
                 writer.AppendLine($"while (await call.ResponseStream.MoveNext({cancellationTokenName}))");
                 using (writer.WithBlock())
                 {
-                    writer.AppendLine($"await responseChannel.WriteAsync(call.ResponseStream.Current, {cancellationTokenName});");
+                    writer.AppendLine("responseChannel.TryWrite(call.ResponseStream.Current);");
                 }
 
                 writer.AppendLine("responseChannel.Complete();");
