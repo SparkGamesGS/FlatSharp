@@ -150,6 +150,9 @@ public class RootModel
             }
         }
 
+        if (elements.Values.OfType<RpcServiceSchemaModel>().Any())
+            UniTaskHelperMethodsGenerator.GenerateUniTaskHelpers(writer);
+
         foreach (var item in this.elements.Values)
         {
             bool emit = context.Options.SpecifiedFilesOnly == false

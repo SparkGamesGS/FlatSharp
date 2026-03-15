@@ -219,7 +219,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
             {
                 foreach (var method in this.calls)
                 {
-                    writer.AppendLine($".AddMethod({methodNameMap[method.Name]}, serviceImpl == null ? ({this.GetServerHandlerDelegateType(method)}?)null : (request, ctx) => serviceImpl.{method.Name}(request, ctx).AsTask())");
+                    writer.AppendLine($".AddMethod({methodNameMap[method.Name]}, serviceImpl == null ? ({this.GetServerHandlerDelegateType(method)}?)null : UniTaskHelpers.AsServerMethod<{method.RequestType}, {method.ResponseType}>(serviceImpl.{method.Name}))");
                 }
 
                 writer.AppendLine(".Build();");
@@ -565,7 +565,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
 
     private string GetServerHandlerDelegate(RpcCallSchemaModel call)
     {
-        return $"new {this.GetServerHandlerDelegateType(call)}((response, ctx) => serviceImpl.{call.Name}(response, ctx).AsTask())";
+        return $"new {this.GetServerHandlerDelegateType(call)}(UniTaskHelpers.AsServerMethod<{call.RequestType}, {call.ResponseType}>({call.Name}))";
     }
 
     private string GetServerHandlerDelegateType(RpcCallSchemaModel call)
