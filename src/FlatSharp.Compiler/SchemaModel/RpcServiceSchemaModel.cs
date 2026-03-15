@@ -227,7 +227,7 @@ public class RpcServiceSchemaModel : BaseSchemaModel
             {
                 foreach (var method in this.calls)
                 {
-                    writer.AppendLine($".AddMethod({methodNameMap[method.Name]}, serviceImpl == null ? ({this.GetServerHandlerDelegateType(method)}?)null : (request, ctx) => serviceImpl.{method.Name}(request, ctx).AsTask())");
+                    writer.AppendLine($".AddMethod({methodNameMap[method.Name]}, serviceImpl == null ? ({this.GetServerHandlerDelegateType(method)}?)null : {GetDelegateCast(method, "serviceImpl")})");
                 }
 
                 writer.AppendLine(".Build();");
@@ -573,12 +573,25 @@ public class RpcServiceSchemaModel : BaseSchemaModel
 
     private string GetServerHandlerDelegate(RpcCallSchemaModel call)
     {
-        return $"new {this.GetServerHandlerDelegateType(call)}((response, ctx) => serviceImpl.{call.Name}(response, ctx).AsTask())";
+        return $"new {this.GetServerHandlerDelegateType(call)}({GetDelegateCast(call, "serviceImpl")})";
     }
 
     private string GetServerHandlerDelegateType(RpcCallSchemaModel call)
     {
         string methodType = GetGrpcMethodType(call.StreamingType);
         return $"{GrpcCore}.{methodType}ServerMethod<{call.RequestType}, {call.ResponseType}>";
+    }
+
+    private string GetDelegateCast(RpcCallSchemaModel call, string serviceImpl)
+    {
+        var streamingType = call.StreamingType;
+        return streamingType switch
+        {
+            RpcStreamingType.Unary => $"(request, context) => {serviceImpl}.{call.Name}(request, context).AsTask()",
+            RpcStreamingType.Client => $"(request, response, context) => {serviceImpl}.{call.Name}(request, response, context).AsTask()",
+            RpcStreamingType.Server => $"(request, response, context) => {serviceImpl}.{call.Name}(request, response, context).AsTask()",
+            RpcStreamingType.Bidirectional => $"(request, response, context) => {serviceImpl}.{call.Name}(request, response, context).AsTask()",
+            _ => throw new ArgumentOutOfRangeException(),
+        };
     }
 }
