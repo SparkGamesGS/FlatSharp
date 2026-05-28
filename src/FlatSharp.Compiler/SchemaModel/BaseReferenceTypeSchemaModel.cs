@@ -75,6 +75,7 @@ public abstract class BaseReferenceTypeSchemaModel : BaseSchemaModel
             this.EmitDefaultConstrutor(writer, context);
             this.EmitDeserializationConstructor(writer);
             this.EmitCopyConstructor(writer, context);
+            this.EmitParameterizedConstructor(writer, context);
 
             writer.AppendLine("static partial void OnStaticInitialize();");
 
@@ -143,9 +144,50 @@ public abstract class BaseReferenceTypeSchemaModel : BaseSchemaModel
         }
     }
 
+    private void EmitParameterizedConstructor(CodeWriter writer, CompileContext context)
+    {
+        if (this.Attributes.DefaultCtorKind != DefaultConstructorKind.Parameterized)
+        {
+            return;
+        }
+
+        writer.BeginPreprocessorIf(CSharpHelpers.Net7PreprocessorVariable, "[System.Diagnostics.CodeAnalysis.SetsRequiredMembers]")
+              .Flush();
+
+        var fields = this.properties
+            .OrderBy(x => x.Key)
+            .Where(x => !x.Value.Field.Deprecated)
+            .Select(x => x.Value)
+            .ToList();
+
+        string paramList = string.Join(", ", fields.Select(f =>
+        {
+            string paramName = char.ToLowerInvariant(f.FieldName[0]) + f.FieldName[1..];
+            return $"{f.GetTypeName()} {paramName}";
+        }));
+
+        writer.AppendLine($"public {this.Name}({paramList})");
+        using (writer.WithBlock())
+        {
+            if (context.CompilePass <= CodeWritingPass.PropertyModeling)
+            {
+                return;
+            }
+
+            foreach (var field in fields)
+            {
+                string paramName = char.ToLowerInvariant(field.FieldName[0]) + field.FieldName[1..];
+                writer.AppendLine($"this.{field.FieldName} = {paramName};");
+            }
+
+            writer.AppendLine("this.OnInitialized(null);");
+        }
+    }
+
     private void EmitDefaultConstrutor(CodeWriter writer, CompileContext context)
     {
-        if (this.Attributes.DefaultCtorKind != DefaultConstructorKind.None)
+        if (this.Attributes.DefaultCtorKind != DefaultConstructorKind.None &&
+            this.Attributes.DefaultCtorKind != DefaultConstructorKind.Parameterized)
         {
             if (this.Attributes.DefaultCtorKind == DefaultConstructorKind.PublicObsolete)
             {

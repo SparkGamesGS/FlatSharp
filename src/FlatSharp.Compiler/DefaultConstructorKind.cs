@@ -35,4 +35,9 @@ public enum DefaultConstructorKind
     /// No default constructor.
     /// </summary>
     None = 2,
+
+    /// <summary>
+    /// A public constructor with a parameter for each field (compile error when a new field is added).
+    /// </summary>
+    Parameterized = 3,
 }

@@ -49,7 +49,7 @@ public class FlatSharpAttributes : IFlatSharpAttributes
 
     public bool? ValueStruct => this.TryParseBoolean(MetadataKeys.ValueStruct);
 
-    public DefaultConstructorKind? DefaultCtorKind => this.TryParseEnum(MetadataKeys.DefaultConstructorKind, DefaultConstructorKind.Public);
+    public DefaultConstructorKind? DefaultCtorKind => this.TryParseEnum(MetadataKeys.DefaultConstructorKind, DefaultConstructorKind.Parameterized);
 
     public VectorType? VectorKind => this.TryParseEnum(MetadataKeys.VectorKind, VectorType.IList);
 

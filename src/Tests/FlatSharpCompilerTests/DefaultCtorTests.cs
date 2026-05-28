@@ -159,7 +159,7 @@ public class DefaultCtorTests
     {
         string schema = $@"
             {MetadataHelpers.AllAttributes}
-            namespace Foo; 
+            namespace Foo;
             table Table ({MetadataKeys.DefaultConstructorKind}:""{DefaultConstructorKind.PublicObsolete}"") {{ Int:int; }}";
 
         var asm = FlatSharpCompiler.CompileAndLoadAssembly(schema, new());
@@ -169,5 +169,61 @@ public class DefaultCtorTests
         Assert.NotNull(constructor);
         Assert.True(constructor.IsPublic);
         Assert.NotNull(constructor.GetCustomAttribute<ObsoleteAttribute>());
+    }
+
+    [Fact]
+    public void DefaultCtorKind_Parameterized_Table_NoDefaultCtor()
+    {
+        string schema = $@"
+            {MetadataHelpers.AllAttributes}
+            namespace Foo;
+            table Table ({MetadataKeys.DefaultConstructorKind}:""{DefaultConstructorKind.Parameterized}"") {{ Int:int; Str:string; }}";
+
+        var asm = FlatSharpCompiler.CompileAndLoadAssembly(schema, new());
+        Type tableType = asm.GetTypes().Single(x => x.Name == "Table");
+
+        // No parameterless constructor.
+        var defaultCtor = tableType.GetConstructor(new Type[0]);
+        Assert.Null(defaultCtor);
+    }
+
+    [Fact]
+    public void DefaultCtorKind_Parameterized_Table_HasParameterizedCtor()
+    {
+        string schema = $@"
+            {MetadataHelpers.AllAttributes}
+            namespace Foo;
+            table Table ({MetadataKeys.DefaultConstructorKind}:""{DefaultConstructorKind.Parameterized}"") {{ Int:int; Str:string; }}";
+
+        var asm = FlatSharpCompiler.CompileAndLoadAssembly(schema, new());
+        Type tableType = asm.GetTypes().Single(x => x.Name == "Table");
+
+        // One public constructor with parameters for each field.
+        var ctors = tableType.GetConstructors(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        var paramCtor = ctors.SingleOrDefault(c => c.GetParameters().Length == 2);
+        Assert.NotNull(paramCtor);
+
+        var paramNames = paramCtor.GetParameters().Select(p => p.Name).ToArray();
+        Assert.Contains("int", paramNames);
+        Assert.Contains("str", paramNames);
+    }
+
+    [Fact]
+    public void DefaultCtorKind_Parameterized_Table_ConstructorAssignsFields()
+    {
+        string schema = $@"
+            {MetadataHelpers.AllAttributes}
+            namespace Foo;
+            table Table ({MetadataKeys.DefaultConstructorKind}:""{DefaultConstructorKind.Parameterized}"") {{ Int:int; }}";
+
+        var asm = FlatSharpCompiler.CompileAndLoadAssembly(schema, new());
+        Type tableType = asm.GetTypes().Single(x => x.Name == "Table");
+
+        var paramCtor = tableType.GetConstructors(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Single(c => c.GetParameters().Length == 1);
+
+        var instance = paramCtor.Invoke(new object[] { 42 });
+        var intProp = tableType.GetProperty("Int")!;
+        Assert.Equal(42, intProp.GetValue(instance));
     }
 }
